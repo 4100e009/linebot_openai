@@ -38,14 +38,15 @@ def GPT_response(text):
 # 監聽所有來自 /callback 的 Post Request
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    msg = event.message.text
-    try:
-        GPT_answer = GPT_response(msg)
-        print(GPT_answer)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
-    except:
-        print(traceback.format_exc())
-        line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
+    # 從事件中獲取用戶發送的訊息
+    user_message = event.message.text
+    
+    # 建立回覆訊息
+    reply_message = TextSendMessage(text=user_message)
+
+    # 使用 LINE Bot API 回覆訊息
+    line_bot_api.reply_message(event.reply_token, reply_message)
+
 
 
 # 處理訊息
