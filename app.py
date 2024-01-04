@@ -53,18 +53,17 @@ def callback():
 
 # 處理訊息
 
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    msg = event.message.text
-    try:
-        GPT_answer = GPT_response(msg)
-        print(GPT_answer)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
-    except Exception as e:
-        error_message = str(traceback.format_exc())
-        print(error_message)
-        # 可以考慮將錯誤訊息寫入日誌或發送一個簡化的錯誤訊息給用戶
-        line_bot_api.reply_message(event.reply_token, TextSendMessage('發生錯誤，請檢查後台Log'))
+    # 從事件中獲取用戶發送的訊息
+    user_message = event.message.text
+    
+    # 建立回覆訊息
+    reply_message = TextSendMessage(text=user_message)
+
+    # 使用 LINE Bot API 回覆訊息
+    line_bot_api.reply_message(event.reply_token, reply_message)
 
         
 
