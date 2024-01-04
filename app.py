@@ -28,7 +28,7 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def GPT_response(text):
     # 接收回應
-    response = openai.Completion.create(model="gpt-3.5-turbo", prompt=text, temperature=0.5, max_tokens=500)
+    response = openai.Completion.create(model="text-davinci-003", prompt=text, temperature=0.5, max_tokens=500)
     print(response)
     # 重組回應
     answer = response['choices'][0]['text'].replace('。','')
@@ -36,33 +36,32 @@ def GPT_response(text):
 
 
 # 監聽所有來自 /callback 的 Post Request
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    # 從事件中獲取用戶發送的訊息
-    user_message = event.message.text
-    
-    # 建立回覆訊息
-    reply_message = TextSendMessage(text=user_message)
-
-    # 使用 LINE Bot API 回覆訊息
-    line_bot_api.reply_message(event.reply_token, reply_message)
-
+@app.route("/callback", methods=['POST'])
+def callback():
+    # get X-Line-Signature header value
+    signature = request.headers['X-Line-Signature']
+    # get request body as text
+    body = request.get_data(as_text=True)
+    app.logger.info("Request body: " + body)
+    # handle webhook body
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+    return 'OK'
 
 
 # 處理訊息
-
-
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    # 從事件中獲取用戶發送的訊息
-    user_message = event.message.text
-    
-    # 建立回覆訊息
-    reply_message = TextSendMessage(text=user_message)
-
-    # 使用 LINE Bot API 回覆訊息
-    line_bot_api.reply_message(event.reply_token, reply_message)
-
+    msg = event.message.text
+    try:
+        GPT_answer = GPT_response(msg)
+        print(GPT_answer)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(GPT_answer))
+    except:
+        print(traceback.format_exc())
+        line_bot_api.reply_message(event.reply_token, TextSendMessage('你所使用的OPENAI API key額度可能已經超過，請於後台Log內確認錯誤訊息'))
         
 
 @handler.add(PostbackEvent)
